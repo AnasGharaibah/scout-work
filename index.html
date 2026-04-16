@@ -693,6 +693,12 @@
     const MAX = 8;
     const arena = document.getElementById("arena");
     const states = CHARS.map(() => ({ lv: 0, prev: 0 }));
+    // Preload all character images and backgrounds upfront
+    (function() {
+      const seen = new Set();
+      CHARS.forEach(ch => ch.levels.forEach(lv => { if (!seen.has(lv.img)) { seen.add(lv.img); new Image().src = lv.img; } }));
+      BGS.forEach(src => new Image().src = src);
+    })();
     function addStars(el) {
       const w = document.createElement("div"); w.className = "stars";
       for (let i = 0; i < 22; i++) { const s = document.createElement("div"); s.className = "st"; const sz = Math.random() * 2 + .8; s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random() * 100}%;top:${Math.random() * 72}%;--d:${(Math.random() * 3 + 1.8).toFixed(1)}s;--dl:${(Math.random() * 4).toFixed(1)}s;--op:${(Math.random() * .55 + .15).toFixed(2)}`; w.appendChild(s); }
@@ -743,6 +749,9 @@
     });
     function sync(i) {
       const ch = CHARS[i], s = states[i], lv = s.lv, L = ch.levels[lv];
+      // Preload adjacent levels for instant transitions
+      if (lv + 1 <= MAX) new Image().src = ch.levels[lv + 1].img;
+      if (lv - 1 >= 0) new Image().src = ch.levels[lv - 1].img;
       document.getElementById("ln" + i).textContent = AR(lv + 1);
       document.getElementById("lt" + i).textContent = L.title;
       document.getElementById("img" + i).style.filter = L.filter || '';
@@ -759,10 +768,14 @@
       const stg = document.getElementById("stg" + i);
       const img = document.getElementById("img" + i);
       const bgEl = document.getElementById("bg" + i);
+      const newSrc = CHARS[i].levels[s.lv].img;
+      // Preload the new image so the entrance animation is smooth
+      const preload = new Image();
+      preload.src = newSrc;
       img.className = "char-img " + (up ? "xu" : "xd");
       bgEl.classList.remove("bg-in"); bgEl.classList.add("bg-out");
       setTimeout(() => {
-        img.src = CHARS[i].levels[s.lv].img;
+        img.src = newSrc;
         img.style.filter = CHARS[i].levels[s.lv].filter || '';
         img.className = "char-img " + (up ? "eu" : "ed");
         bgEl.style.backgroundImage = "url('" + BGS[s.lv] + "')";
